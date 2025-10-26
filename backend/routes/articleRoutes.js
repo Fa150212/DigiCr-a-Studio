@@ -6,7 +6,11 @@ const {
   getArticleById,
   createArticle,
   likeArticle,
+  getLastArticle,
 } = require("../controllers/articleController");
+
+// 🔹 Récupérer le dernier article
+router.get("/last", getLastArticle);
 
 // 🔹 Récupérer les articles (avec pagination)
 router.get("/", getArticles);

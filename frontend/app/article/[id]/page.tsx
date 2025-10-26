@@ -122,3 +122,405 @@ export default function ArticlePage() {
     </main>
   );
 }
+
+
+// // "use client";
+
+// // import { useEffect, useState } from "react";
+// // import { useParams } from "next/navigation";
+// // import {
+// //   FaHeart,
+// //   FaRegHeart,
+// //   FaUserCircle,
+// //   FaRegCommentDots,
+// // } from "react-icons/fa";
+
+// // export default function ArticlePage() {
+// //   const { id } = useParams();
+// //   const [article, setArticle] = useState<any>(null);
+// //   const [comments, setComments] = useState<any[]>([]);
+// //   const [newComment, setNewComment] = useState("");
+// //   const [author, setAuthor] = useState("");
+// //   const [loading, setLoading] = useState(true);
+// //   const [liked, setLiked] = useState(false);
+
+// //   // 🧩 Charger l’article et les commentaires
+// //   useEffect(() => {
+// //     const fetchData = async () => {
+// //       const res = await fetch(`http://localhost:5000/api/articles/${id}`);
+// //       const data = await res.json();
+// //       setArticle(data);
+
+// //       const comRes = await fetch(`http://localhost:5000/api/comments/${id}`);
+// //       const comData = await comRes.json();
+// //       setComments(comData);
+// //       setLoading(false);
+// //     };
+// //     fetchData();
+// //   }, [id]);
+
+// //   // ❤️ Like
+// //   const handleLike = async () => {
+// //     const res = await fetch(`http://localhost:5000/api/articles/${id}/like`, {
+// //       method: "POST",
+// //     });
+// //     const data = await res.json();
+// //     setArticle({ ...article, likes: data.likes });
+// //     setLiked(!liked);
+// //   };
+
+// //   // 💬 Ajouter un commentaire
+// //   const handleComment = async (e: React.FormEvent) => {
+// //     e.preventDefault();
+// //     if (!newComment.trim()) return;
+
+// //     await fetch(`http://localhost:5000/api/comments/${id}`, {
+// //       method: "POST",
+// //       headers: { "Content-Type": "application/json" },
+// //       body: JSON.stringify({ author, text: newComment }),
+// //     });
+
+// //     setNewComment("");
+// //     setAuthor("");
+// //     const res = await fetch(`http://localhost:5000/api/comments/${id}`);
+// //     const comData = await res.json();
+// //     setComments(comData);
+// //   };
+
+// //   if (loading)
+// //     return (
+// //       <p className="text-center mt-10 text-gray-500 animate-pulse">
+// //         Chargement...
+// //       </p>
+// //     );
+
+// //   if (!article)
+// //     return (
+// //       <p className="text-center mt-10 text-gray-500">
+// //         Article introuvable 😢
+// //       </p>
+// //     );
+
+// //   return (
+// //     <main className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
+// //       {/* 🖼️ Image principale */}
+// //       {article.image && (
+// //         <img
+// //           src={article.image}
+// //           alt={article.title}
+// //           className="w-full h-72 object-cover rounded-lg mb-6"
+// //         />
+// //       )}
+
+// //       {/* 📰 Titre et date */}
+// //       <h1 className="text-3xl font-bold mb-2 text-gray-900">{article.title}</h1>
+// //       <p className="text-gray-500 mb-4 italic">{article.date}</p>
+
+// //       {/* ✍️ Contenu avec overflow scroll (sans scrollbar visible) */}
+// //       <div
+// //         className="text-gray-800 mb-6 whitespace-pre-line leading-relaxed max-h-[400px] overflow-y-scroll scrollbar-hide"
+// //         style={{
+// //           scrollbarWidth: "none", // Firefox
+// //           msOverflowStyle: "none", // IE
+// //         }}
+// //       >
+// //         <style jsx>{`
+// //           .scrollbar-hide::-webkit-scrollbar {
+// //             display: none;
+// //           }
+// //         `}</style>
+// //         {article.content}
+// //       </div>
+
+// //       {/* ❤️ Like */}
+// //       <div className="flex items-center gap-3 mb-8">
+// //         <button
+// //           onClick={handleLike}
+// //           className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+// //         >
+// //           {liked ? <FaHeart /> : <FaRegHeart />} J’aime
+// //         </button>
+// //         <span className="text-lg font-semibold text-gray-700">
+// //           {article.likes || 0} like{article.likes > 1 ? "s" : ""}
+// //         </span>
+// //       </div>
+
+// //       {/* 💬 Commentaires */}
+// //       <section>
+// //         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-gray-800">
+// //           <FaRegCommentDots /> Commentaires
+// //         </h2>
+
+// //         {/* 📝 Formulaire */}
+// //         <form onSubmit={handleComment} className="mb-6 flex flex-col gap-3">
+// //           <input
+// //             type="text"
+// //             placeholder="Votre nom"
+// //             value={author}
+// //             onChange={(e) => setAuthor(e.target.value)}
+// //             className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+// //           />
+// //           <textarea
+// //             placeholder="Écrire un commentaire..."
+// //             value={newComment}
+// //             onChange={(e) => setNewComment(e.target.value)}
+// //             rows={3}
+// //             className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+// //           />
+// //           <button
+// //             type="submit"
+// //             className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition font-semibold"
+// //           >
+// //             Publier 💬
+// //           </button>
+// //         </form>
+
+// //         {/* Liste des commentaires */}
+// //         <div className="space-y-4">
+// //           {comments.length > 0 ? (
+// //             comments.map((cmt) => (
+// //               <div
+// //                 key={cmt._id}
+// //                 className="border border-gray-200 p-3 rounded-lg shadow-sm"
+// //               >
+// //                 <p className="flex items-center gap-2 font-semibold text-gray-800">
+// //                   <FaUserCircle className="text-gray-500" />
+// //                   {cmt.author}
+// //                 </p>
+// //                 <p className="text-gray-700 mt-1">{cmt.text}</p>
+// //                 <p className="text-sm text-gray-400 mt-1">
+// //                   {new Date(cmt.date).toLocaleDateString()}
+// //                 </p>
+// //               </div>
+// //             ))
+// //           ) : (
+// //             <p className="text-gray-500">Aucun commentaire pour le moment.</p>
+// //           )}
+// //         </div>
+// //       </section>
+// //     </main>
+// //   );
+// // }
+
+
+// "use client";
+
+// import { useEffect, useState } from "react";
+// import { useParams } from "next/navigation";
+// import {
+//   FaHeart,
+//   FaRegHeart,
+//   FaUserCircle,
+//   FaRegCommentDots,
+// } from "react-icons/fa";
+// import Link from "next/link";
+
+// export default function ArticlePage() {
+//   const { id } = useParams();
+//   const [article, setArticle] = useState<any>(null);
+//   const [comments, setComments] = useState<any[]>([]);
+//   const [similarArticles, setSimilarArticles] = useState<any[]>([]);
+//   const [newComment, setNewComment] = useState("");
+//   const [loading, setLoading] = useState(true);
+//   const [liked, setLiked] = useState(false);
+
+//   // 🧩 Charger l’article, commentaires et articles similaires
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         const [articleRes, commentRes, allArticlesRes] = await Promise.all([
+//           fetch(`http://localhost:5000/api/articles/${id}`),
+//           fetch(`http://localhost:5000/api/comments/${id}`),
+//           fetch(`http://localhost:5000/api/articles?limit=4`),
+//         ]);
+
+//         const articleData = await articleRes.json();
+//         const commentData = await commentRes.json();
+//         const allArticles = await allArticlesRes.json();
+
+//         setArticle(articleData);
+//         setComments(commentData);
+
+//         // exclure l’article actuel
+//         const filtered = allArticles.filter((a: any) => a._id !== id).slice(0, 3);
+//         setSimilarArticles(filtered);
+//       } catch (error) {
+//         console.error("Erreur de chargement :", error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchData();
+//   }, [id]);
+
+//   // ❤️ Like
+//   const handleLike = async () => {
+//     const res = await fetch(`http://localhost:5000/api/articles/${id}/like`, {
+//       method: "POST",
+//     });
+//     const data = await res.json();
+//     setArticle({ ...article, likes: data.likes });
+//     setLiked(!liked);
+//   };
+
+//   // 💬 Ajouter un commentaire (anonyme)
+//   const handleComment = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     if (!newComment.trim()) return;
+
+//     await fetch(`http://localhost:5000/api/comments/${id}`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ author: "Anonyme", text: newComment }),
+//     });
+
+//     setNewComment("");
+//     const res = await fetch(`http://localhost:5000/api/comments/${id}`);
+//     const comData = await res.json();
+//     setComments(comData);
+//   };
+
+//   if (loading)
+//     return (
+//       <p className="text-center mt-10 text-gray-500 animate-pulse">
+//         Chargement de l’article...
+//       </p>
+//     );
+
+//   if (!article)
+//     return (
+//       <p className="text-center mt-10 text-gray-500">Article introuvable 😢</p>
+//     );
+
+//   return (
+//     <main className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
+//       {/* 🖼️ Image principale */}
+//       {article.image && (
+//         <img
+//           src={article.image}
+//           alt={article.title}
+//           className="w-full h-72 object-cover rounded-lg mb-6"
+//         />
+//       )}
+
+//       {/* 📰 Titre et date */}
+//       <h1 className="text-3xl font-bold mb-2 text-gray-900">{article.title}</h1>
+//       <p className="text-gray-500 mb-4 italic">{article.date}</p>
+
+//       {/* ✍️ Contenu avec overflow scroll (sans scrollbar visible) */}
+//       <div
+//         className="text-gray-800 mb-6 whitespace-pre-line leading-relaxed max-h-[400px] overflow-y-scroll scrollbar-hide"
+//         style={{
+//           scrollbarWidth: "none",
+//           msOverflowStyle: "none",
+//         }}
+//       >
+//         <style jsx>{`
+//           .scrollbar-hide::-webkit-scrollbar {
+//             display: none;
+//           }
+//         `}</style>
+//         {article.content}
+//       </div>
+
+//       {/* ❤️ Like */}
+//       <div className="flex items-center gap-3 mb-8">
+//         <button
+//           onClick={handleLike}
+//           className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+//         >
+//           {liked ? <FaHeart /> : <FaRegHeart />} J’aime
+//         </button>
+//         <span className="text-lg font-semibold text-gray-700">
+//           {article.likes || 0} like{article.likes > 1 ? "s" : ""}
+//         </span>
+//       </div>
+
+//       {/* 💬 Commentaires */}
+//       <section>
+//         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-gray-800">
+//           <FaRegCommentDots /> Commentaires
+//         </h2>
+
+//         {/* 📝 Formulaire */}
+//         <form onSubmit={handleComment} className="mb-6 flex flex-col gap-3">
+//           <textarea
+//             placeholder="Écrire un commentaire..."
+//             value={newComment}
+//             onChange={(e) => setNewComment(e.target.value)}
+//             rows={3}
+//             className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+//           />
+//           <button
+//             type="submit"
+//             className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition font-semibold"
+//           >
+//             Publier 💬
+//           </button>
+//         </form>
+
+//         {/* Liste des commentaires */}
+//         <div className="space-y-4">
+//           {comments.length > 0 ? (
+//             comments.map((cmt) => (
+//               <div
+//                 key={cmt._id}
+//                 className="border border-gray-200 p-3 rounded-lg shadow-sm"
+//               >
+//                 <p className="flex items-center gap-2 font-semibold text-gray-800">
+//                   <FaUserCircle className="text-gray-500" />
+//                   {cmt.author || "Anonyme"}
+//                 </p>
+//                 <p className="text-gray-700 mt-1">{cmt.text}</p>
+//                 <p className="text-sm text-gray-400 mt-1">
+//                   {new Date(cmt.date).toLocaleDateString()}
+//                 </p>
+//               </div>
+//             ))
+//           ) : (
+//             <p className="text-gray-500">Aucun commentaire pour le moment.</p>
+//           )}
+//         </div>
+//       </section>
+
+//       {/* 📰 Articles similaires */}
+//       {similarArticles.length > 0 && (
+//         <section className="mt-12">
+//           <h2 className="text-2xl font-semibold mb-6 text-gray-900 text-center">
+//             Articles Similaires 🔍
+//           </h2>
+//           <div className="grid md:grid-cols-3 gap-6">
+//             {similarArticles.map((art) => (
+//               <div
+//                 key={art._id}
+//                 className="bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition p-4"
+//               >
+//                 {art.image && (
+//                   <img
+//                     src={art.image}
+//                     alt={art.title}
+//                     className="w-full h-40 object-cover rounded-lg mb-3"
+//                   />
+//                 )}
+//                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
+//                   {art.title}
+//                 </h3>
+//                 <p className="text-gray-600 text-sm line-clamp-3 mb-4">
+//                   {art.description}
+//                 </p>
+//                 <Link
+//                   href={`/article/${art._id}`}
+//                   className="inline-block bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg text-sm transition"
+//                 >
+//                   Lire l’article →
+//                 </Link>
+//               </div>
+//             ))}
+//           </div>
+//         </section>
+//       )}
+//     </main>
+//   );
+// }
+

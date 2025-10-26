@@ -72,4 +72,15 @@ const likeArticle = async (req, res) => {
   }
 };
 
-module.exports = { getArticles, getArticleById, createArticle, likeArticle };
+// ✅ GET — Dernier article publié
+const getLastArticle = async (req, res) => {
+  try {
+    const lastArticle = await Article.findOne().sort({ date: -1 }); // tri décroissant
+    if (!lastArticle) return res.status(404).json({ message: "Aucun article trouvé" });
+    res.json(lastArticle);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la récupération du dernier article", error });
+  }
+};
+
+module.exports = { getArticles, getArticleById, createArticle, likeArticle, getLastArticle  };

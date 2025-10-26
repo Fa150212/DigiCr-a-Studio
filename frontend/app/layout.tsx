@@ -1,6 +1,7 @@
 import "./globals.css"
 import { ReactNode } from "react"
 import Link from "next/link"
+import { FaLightbulb, FaCopyright } from "react-icons/fa";
 
 export const metadata = {
   title: "DigiCréa-Studio",
@@ -46,14 +47,22 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         </main>
 
         {/* 🌈 FOOTER MODERNE */}
+        
         <footer className="bg-blue-600 text-white py-6 mt-0 shadow-inner">
-          <div className="max-w-6xl mx-auto text-center space-y-2">
-            <p className="text-lg font-semibold">DigiCréa-Studio 💡</p>
-            <p className="text-sm opacity-80">
+          <div className="max-w-6xl mx-auto text-center space-y-2 flex flex-col items-center">
+            <div className="flex items-center space-x-2">
+              <FaLightbulb className="w-5 h-5 text-yellow-300" />
+              <p className="text-lg font-semibold flex items-center">
+                DigiCréa-Studio
+              </p>
+            </div>
+            <p className="text-sm opacity-80 flex items-center gap-2">
+              <FaLightbulb className="w-4 h-4" />
               Astuces, tendances et stratégies en communication digitale.
             </p>
-            <p className="text-sm opacity-70">
-              © {new Date().getFullYear()} DigiCréa-Studio. Tous droits réservés.
+            <p className="text-sm opacity-70 flex items-center gap-2">
+              <FaCopyright className="w-4 h-4" />
+              {new Date().getFullYear()} DigiCréa-Studio. Tous droits réservés.
             </p>
           </div>
         </footer>
