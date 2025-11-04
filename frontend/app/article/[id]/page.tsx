@@ -1,32 +1,37 @@
 "use client";
 
+import { useSession, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 export default function ArticlePage() {
   const { id } = useParams();
+  const { data: session } = useSession();
   const [article, setArticle] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
-  const [author, setAuthor] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // 🧩 Charger l’article et les commentaires
+  const [replyText, setReplyText] = useState("");
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+
+  // 🧩 Charger article et commentaires
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch(`http://localhost:5000/api/articles/${id}`);
-      const data = await res.json();
-      setArticle(data);
+      const articleRes = await fetch(`http://localhost:5000/api/articles/${id}`);
+      const articleData = await articleRes.json();
+      setArticle(articleData);
 
-      const comRes = await fetch(`http://localhost:5000/api/comments/${id}`);
-      const comData = await comRes.json();
-      setComments(comData);
+      const commentRes = await fetch(`http://localhost:5000/api/comments/${id}`);
+      const commentData = await commentRes.json();
+      setComments(commentData);
+
       setLoading(false);
     };
     fetchData();
   }, [id]);
 
-  // ❤️ Like
+  // ❤️ Like article
   const handleLike = async () => {
     const res = await fetch(`http://localhost:5000/api/articles/${id}/like`, { method: "POST" });
     const data = await res.json();
@@ -36,19 +41,51 @@ export default function ArticlePage() {
   // 💬 Ajouter un commentaire
   const handleComment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session) return alert("Connecte-toi pour commenter !");
     if (!newComment.trim()) return;
 
     await fetch(`http://localhost:5000/api/comments/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ author, text: newComment }),
+      body: JSON.stringify({ author: session.user.name, text: newComment }),
     });
 
     setNewComment("");
-    setAuthor("");
+    refreshComments();
+  };
+
+  // 🪄 Répondre à un commentaire
+  const handleReply = async (commentId: string) => {
+    if (!session) return alert("Connecte-toi pour répondre !");
+    if (!replyText.trim()) return;
+
+    await fetch(`http://localhost:5000/api/comments/${commentId}/reply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ author: session.user.name, text: replyText }),
+    });
+
+    setReplyText("");
+    setReplyingTo(null);
+    refreshComments();
+  };
+
+  // 😍 Réagir avec un émoji
+  const handleReact = async (commentId: string, emoji: string) => {
+    await fetch(`http://localhost:5000/api/comments/${commentId}/react`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emoji }),
+    });
+
+    refreshComments();
+  };
+
+  // 🔁 Recharger les commentaires
+  const refreshComments = async () => {
     const res = await fetch(`http://localhost:5000/api/comments/${id}`);
-    const comData = await res.json();
-    setComments(comData);
+    const data = await res.json();
+    setComments(data);
   };
 
   if (loading) return <p className="text-center mt-10">Chargement...</p>;
@@ -80,38 +117,100 @@ export default function ArticlePage() {
       <section>
         <h2 className="text-2xl font-semibold mb-4">Commentaires</h2>
 
-        <form onSubmit={handleComment} className="mb-6 flex flex-col gap-3">
-          <input
-            type="text"
-            placeholder="Votre nom"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            className="border border-gray-300 rounded-lg p-2"
-          />
-          <textarea
-            placeholder="Écrire un commentaire..."
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            rows={3}
-            className="border border-gray-300 rounded-lg p-2"
-          />
+        {!session ? (
           <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
+            onClick={() => signIn("google")}
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg mb-4"
           >
-            Publier 💬
+            Se connecter pour commenter
           </button>
-        </form>
+        ) : (
+          <form onSubmit={handleComment} className="mb-6 flex flex-col gap-3">
+            <textarea
+              placeholder="Écrire un commentaire..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              rows={3}
+              className="border border-gray-300 rounded-lg p-2"
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
+            >
+              Publier 💬
+            </button>
+          </form>
+        )}
 
+        {/* 🔽 Liste des commentaires */}
         <div className="space-y-4">
           {comments.length > 0 ? (
             comments.map((cmt) => (
               <div key={cmt._id} className="border border-gray-200 p-3 rounded-lg">
-                <p className="font-semibold">{cmt.author}</p>
+                <p className="font-semibold text-blue-700">{cmt.author}</p>
                 <p className="text-gray-700">{cmt.text}</p>
                 <p className="text-sm text-gray-400">
                   {new Date(cmt.date).toLocaleDateString()}
                 </p>
+
+                {/* 🧡 Réactions */}
+                <div className="flex gap-3 mt-2">
+                  {["❤️", "🔥", "👍", "😂"].map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => handleReact(cmt._id, emoji)}
+                      className="text-lg"
+                    >
+                      {emoji} {cmt.reactions?.[emoji] || 0}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 💬 Bouton Répondre */}
+                {session && (
+                  <button
+                    onClick={() =>
+                      setReplyingTo(replyingTo === cmt._id ? null : cmt._id)
+                    }
+                    className="text-blue-600 text-sm mt-2"
+                  >
+                    {replyingTo === cmt._id ? "Annuler" : "Répondre"}
+                  </button>
+                )}
+
+                {/* 📝 Formulaire de réponse */}
+                {replyingTo === cmt._id && (
+                  <div className="mt-3">
+                    <textarea
+                      placeholder="Votre réponse..."
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      rows={2}
+                      className="border border-gray-300 rounded-lg p-2 w-full"
+                    />
+                    <button
+                      onClick={() => handleReply(cmt._id)}
+                      className="mt-2 bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm"
+                    >
+                      Répondre 💬
+                    </button>
+                  </div>
+                )}
+
+                {/* 🔁 Affichage des réponses */}
+                {cmt.replies?.length > 0 && (
+                  <div className="mt-3 ml-4 border-l-2 border-gray-200 pl-3 space-y-2">
+                    {cmt.replies.map((rep: any, i: number) => (
+                      <div key={i} className="text-sm">
+                        <p className="font-semibold text-green-700">{rep.author}</p>
+                        <p className="text-gray-700">{rep.text}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(rep.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           ) : (
@@ -124,27 +223,207 @@ export default function ArticlePage() {
 }
 
 
+// "use client";
+
+// import { useSession, signIn } from "next-auth/react";
+// import { useEffect, useState } from "react";
+// import { useParams } from "next/navigation";
+
+// export default function ArticlePage() {
+//   const { id } = useParams();
+//   const { data: session } = useSession();
+//   const [article, setArticle] = useState<any>(null);
+//   const [comments, setComments] = useState<any[]>([]);
+//   const [newComment, setNewComment] = useState("");
+//   const [replyTo, setReplyTo] = useState<string | null>(null);
+//   const [replyText, setReplyText] = useState("");
+//   const [loading, setLoading] = useState(true);
+
+//   // Charger article + commentaires
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       const res = await fetch(`http://localhost:5000/api/articles/${id}`);
+//       const data = await res.json();
+//       setArticle(data);
+
+//       const comRes = await fetch(`http://localhost:5000/api/comments/${id}`);
+//       const comData = await comRes.json();
+//       setComments(comData);
+//       setLoading(false);
+//     };
+//     fetchData();
+//   }, [id]);
+
+//   const handleLike = async () => {
+//     const res = await fetch(`http://localhost:5000/api/articles/${id}/like`, { method: "POST" });
+//     const data = await res.json();
+//     setArticle({ ...article, likes: data.likes });
+//   };
+
+//   const handleComment = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     if (!newComment.trim()) return;
+//     if (!session) return alert("Connecte-toi pour commenter !");
+//     await fetch(`http://localhost:5000/api/comments/${id}`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ author: session.user.name, text: newComment }),
+//     });
+//     setNewComment("");
+//     refreshComments();
+//   };
+
+//   const handleReply = async (commentId: string) => {
+//     if (!replyText.trim()) return;
+//     await fetch(`http://localhost:5000/api/comments/${commentId}/reply`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ author: session.user.name, text: replyText }),
+//     });
+//     setReplyText("");
+//     setReplyTo(null);
+//     refreshComments();
+//   };
+
+//   const handleReaction = async (commentId: string, emoji: string) => {
+//     await fetch(`http://localhost:5000/api/comments/${commentId}/react`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ emoji }),
+//     });
+//     refreshComments();
+//   };
+
+//   const refreshComments = async () => {
+//     const comRes = await fetch(`http://localhost:5000/api/comments/${id}`);
+//     const comData = await comRes.json();
+//     setComments(comData);
+//   };
+
+//   if (loading) return <p className="text-center mt-10">Chargement...</p>;
+
+//   return (
+//     <main className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
+//       <img src={article.image} alt={article.title} className="w-full h-72 object-cover rounded-lg mb-6" />
+//       <h1 className="text-3xl font-bold mb-2">{article.title}</h1>
+//       <p className="text-gray-500 mb-4">{article.date}</p>
+//       <p className="text-gray-800 mb-6 whitespace-pre-line">{article.content}</p>
+
+//       {/* ❤️ Like */}
+//       <div className="flex items-center gap-3 mb-8">
+//         <button onClick={handleLike} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+//           ❤️ Like
+//         </button>
+//         <span className="text-lg font-semibold text-gray-700">{article.likes || 0} likes</span>
+//       </div>
+
+//       {/* 💬 Commentaires */}
+//       <section>
+//         <h2 className="text-2xl font-semibold mb-4">Commentaires</h2>
+
+//         {!session ? (
+//           <button onClick={() => signIn("google")} className="bg-blue-600 text-white px-6 py-3 rounded-lg mb-4">
+//             Se connecter pour commenter
+//           </button>
+//         ) : (
+//           <form onSubmit={handleComment} className="mb-6 flex flex-col gap-3">
+//             <textarea
+//               placeholder="Écrire un commentaire..."
+//               value={newComment}
+//               onChange={(e) => setNewComment(e.target.value)}
+//               rows={3}
+//               className="border border-gray-300 rounded-lg p-2"
+//             />
+//             <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg">
+//               Publier 💬
+//             </button>
+//           </form>
+//         )}
+
+//         <div className="space-y-4">
+//           {comments.map((cmt) => (
+//             <div key={cmt._id} className="border border-gray-200 p-3 rounded-lg">
+//               <p className="font-semibold text-blue-700">{cmt.author}</p>
+//               <p className="text-gray-700">{cmt.text}</p>
+
+//               {/* 😍 Réactions */}
+//               <div className="flex gap-2 mt-2">
+//                 {["❤️", "🔥", "👍", "😂"].map((emoji) => (
+//                   <button
+//                     key={emoji}
+//                     onClick={() => handleReaction(cmt._id, emoji)}
+//                     className="text-lg hover:scale-110 transition"
+//                   >
+//                     {emoji} {cmt.reactions?.[emoji] || 0}
+//                   </button>
+//                 ))}
+//               </div>
+
+//               {/* 💬 Bouton Répondre (admin uniquement) */}
+//               {session?.user?.email === "admin@digi-crea.com" && (
+//                 <button
+//                   onClick={() => setReplyTo(replyTo === cmt._id ? null : cmt._id)}
+//                   className="text-sm text-blue-600 mt-2"
+//                 >
+//                   Répondre
+//                 </button>
+//               )}
+
+//               {/* ✏️ Formulaire de réponse */}
+//               {replyTo === cmt._id && (
+//                 <div className="mt-3">
+//                   <textarea
+//                     placeholder="Écrire une réponse..."
+//                     value={replyText}
+//                     onChange={(e) => setReplyText(e.target.value)}
+//                     rows={2}
+//                     className="border border-gray-300 rounded-lg p-2 w-full"
+//                   />
+//                   <button
+//                     onClick={() => handleReply(cmt._id)}
+//                     className="bg-green-600 text-white px-3 py-1 rounded-lg mt-2 text-sm"
+//                   >
+//                     Répondre ✅
+//                   </button>
+//                 </div>
+//               )}
+
+//               {/* 🧩 Réponses affichées */}
+//               {cmt.replies?.length > 0 && (
+//                 <div className="mt-3 ml-4 border-l-2 border-gray-200 pl-3 space-y-2">
+//                   {cmt.replies.map((rep: any, i: number) => (
+//                     <div key={i} className="text-sm bg-gray-50 p-2 rounded">
+//                       <p className="font-semibold text-gray-700">{rep.author}</p>
+//                       <p>{rep.text}</p>
+//                     </div>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+//           ))}
+//         </div>
+//       </section>
+//     </main>
+//   );
+// }
+
+
+
 // // "use client";
 
+// // import { useSession, signIn, signOut } from "next-auth/react";
 // // import { useEffect, useState } from "react";
 // // import { useParams } from "next/navigation";
-// // import {
-// //   FaHeart,
-// //   FaRegHeart,
-// //   FaUserCircle,
-// //   FaRegCommentDots,
-// // } from "react-icons/fa";
 
 // // export default function ArticlePage() {
 // //   const { id } = useParams();
+// //   const { data: session } = useSession(); // ✅ on récupère l’utilisateur connecté
 // //   const [article, setArticle] = useState<any>(null);
 // //   const [comments, setComments] = useState<any[]>([]);
 // //   const [newComment, setNewComment] = useState("");
-// //   const [author, setAuthor] = useState("");
 // //   const [loading, setLoading] = useState(true);
-// //   const [liked, setLiked] = useState(false);
 
-// //   // 🧩 Charger l’article et les commentaires
+// //   // 🧩 Charger article et commentaires
 // //   useEffect(() => {
 // //     const fetchData = async () => {
 // //       const res = await fetch(`http://localhost:5000/api/articles/${id}`);
@@ -161,134 +440,83 @@ export default function ArticlePage() {
 
 // //   // ❤️ Like
 // //   const handleLike = async () => {
-// //     const res = await fetch(`http://localhost:5000/api/articles/${id}/like`, {
-// //       method: "POST",
-// //     });
+// //     const res = await fetch(`http://localhost:5000/api/articles/${id}/like`, { method: "POST" });
 // //     const data = await res.json();
 // //     setArticle({ ...article, likes: data.likes });
-// //     setLiked(!liked);
 // //   };
 
-// //   // 💬 Ajouter un commentaire
+// //   // 💬 Commentaire
 // //   const handleComment = async (e: React.FormEvent) => {
 // //     e.preventDefault();
 // //     if (!newComment.trim()) return;
+// //     if (!session) return alert("Connecte-toi pour commenter !");
 
 // //     await fetch(`http://localhost:5000/api/comments/${id}`, {
 // //       method: "POST",
 // //       headers: { "Content-Type": "application/json" },
-// //       body: JSON.stringify({ author, text: newComment }),
+// //       body: JSON.stringify({
+// //         author: session.user.name, // ✅ nom auto depuis la session
+// //         text: newComment,
+// //       }),
 // //     });
 
 // //     setNewComment("");
-// //     setAuthor("");
 // //     const res = await fetch(`http://localhost:5000/api/comments/${id}`);
 // //     const comData = await res.json();
 // //     setComments(comData);
 // //   };
 
-// //   if (loading)
-// //     return (
-// //       <p className="text-center mt-10 text-gray-500 animate-pulse">
-// //         Chargement...
-// //       </p>
-// //     );
-
-// //   if (!article)
-// //     return (
-// //       <p className="text-center mt-10 text-gray-500">
-// //         Article introuvable 😢
-// //       </p>
-// //     );
+// //   if (loading) return <p className="text-center mt-10">Chargement...</p>;
+// //   if (!article) return <p className="text-center mt-10">Article introuvable 😢</p>;
 
 // //   return (
 // //     <main className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
-// //       {/* 🖼️ Image principale */}
-// //       {article.image && (
-// //         <img
-// //           src={article.image}
-// //           alt={article.title}
-// //           className="w-full h-72 object-cover rounded-lg mb-6"
-// //         />
-// //       )}
-
-// //       {/* 📰 Titre et date */}
-// //       <h1 className="text-3xl font-bold mb-2 text-gray-900">{article.title}</h1>
-// //       <p className="text-gray-500 mb-4 italic">{article.date}</p>
-
-// //       {/* ✍️ Contenu avec overflow scroll (sans scrollbar visible) */}
-// //       <div
-// //         className="text-gray-800 mb-6 whitespace-pre-line leading-relaxed max-h-[400px] overflow-y-scroll scrollbar-hide"
-// //         style={{
-// //           scrollbarWidth: "none", // Firefox
-// //           msOverflowStyle: "none", // IE
-// //         }}
-// //       >
-// //         <style jsx>{`
-// //           .scrollbar-hide::-webkit-scrollbar {
-// //             display: none;
-// //           }
-// //         `}</style>
-// //         {article.content}
-// //       </div>
+// //       <img src={article.image} alt={article.title} className="w-full h-72 object-cover rounded-lg mb-6" />
+// //       <h1 className="text-3xl font-bold mb-2">{article.title}</h1>
+// //       <p className="text-gray-500 mb-4">{article.date}</p>
+// //       <p className="text-gray-800 mb-6 whitespace-pre-line">{article.content}</p>
 
 // //       {/* ❤️ Like */}
 // //       <div className="flex items-center gap-3 mb-8">
-// //         <button
-// //           onClick={handleLike}
-// //           className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
-// //         >
-// //           {liked ? <FaHeart /> : <FaRegHeart />} J’aime
+// //         <button onClick={handleLike} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">
+// //           ❤️ Like
 // //         </button>
-// //         <span className="text-lg font-semibold text-gray-700">
-// //           {article.likes || 0} like{article.likes > 1 ? "s" : ""}
-// //         </span>
+// //         <span className="text-lg font-semibold text-gray-700">{article.likes || 0} likes</span>
 // //       </div>
 
 // //       {/* 💬 Commentaires */}
 // //       <section>
-// //         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-gray-800">
-// //           <FaRegCommentDots /> Commentaires
-// //         </h2>
+// //         <h2 className="text-2xl font-semibold mb-4">Commentaires</h2>
 
-// //         {/* 📝 Formulaire */}
-// //         <form onSubmit={handleComment} className="mb-6 flex flex-col gap-3">
-// //           <input
-// //             type="text"
-// //             placeholder="Votre nom"
-// //             value={author}
-// //             onChange={(e) => setAuthor(e.target.value)}
-// //             className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-// //           />
-// //           <textarea
-// //             placeholder="Écrire un commentaire..."
-// //             value={newComment}
-// //             onChange={(e) => setNewComment(e.target.value)}
-// //             rows={3}
-// //             className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-// //           />
+// //         {!session ? (
 // //           <button
-// //             type="submit"
-// //             className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition font-semibold"
+// //             onClick={() => signIn("google")}
+// //             className="bg-blue-600 text-white px-6 py-3 rounded-lg mb-4"
 // //           >
-// //             Publier 💬
+// //             Se connecter pour commenter
 // //           </button>
-// //         </form>
+// //         ) : (
+// //           <form onSubmit={handleComment} className="mb-6 flex flex-col gap-3">
+// //             <textarea
+// //               placeholder="Écrire un commentaire..."
+// //               value={newComment}
+// //               onChange={(e) => setNewComment(e.target.value)}
+// //               rows={3}
+// //               className="border border-gray-300 rounded-lg p-2"
+// //             />
+// //             <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg">
+// //               Publier 💬
+// //             </button>
+// //           </form>
+// //         )}
 
-// //         {/* Liste des commentaires */}
 // //         <div className="space-y-4">
 // //           {comments.length > 0 ? (
 // //             comments.map((cmt) => (
-// //               <div
-// //                 key={cmt._id}
-// //                 className="border border-gray-200 p-3 rounded-lg shadow-sm"
-// //               >
-// //                 <p className="flex items-center gap-2 font-semibold text-gray-800">
-// //                   <FaUserCircle className="text-gray-500" />
-// //                   {cmt.author}
-// //                 </p>
-// //                 <p className="text-gray-700 mt-1">{cmt.text}</p>
-// //                 <p className="text-sm text-gray-400 mt-1">
+// //               <div key={cmt._id} className="border border-gray-200 p-3 rounded-lg">
+// //                 <p className="font-semibold text-blue-700">{cmt.author}</p>
+// //                 <p className="text-gray-700">{cmt.text}</p>
+// //                 <p className="text-sm text-gray-400">
 // //                   {new Date(cmt.date).toLocaleDateString()}
 // //                 </p>
 // //               </div>
@@ -301,226 +529,3 @@ export default function ArticlePage() {
 // //     </main>
 // //   );
 // // }
-
-
-// "use client";
-
-// import { useEffect, useState } from "react";
-// import { useParams } from "next/navigation";
-// import {
-//   FaHeart,
-//   FaRegHeart,
-//   FaUserCircle,
-//   FaRegCommentDots,
-// } from "react-icons/fa";
-// import Link from "next/link";
-
-// export default function ArticlePage() {
-//   const { id } = useParams();
-//   const [article, setArticle] = useState<any>(null);
-//   const [comments, setComments] = useState<any[]>([]);
-//   const [similarArticles, setSimilarArticles] = useState<any[]>([]);
-//   const [newComment, setNewComment] = useState("");
-//   const [loading, setLoading] = useState(true);
-//   const [liked, setLiked] = useState(false);
-
-//   // 🧩 Charger l’article, commentaires et articles similaires
-//   useEffect(() => {
-//     const fetchData = async () => {
-//       try {
-//         const [articleRes, commentRes, allArticlesRes] = await Promise.all([
-//           fetch(`http://localhost:5000/api/articles/${id}`),
-//           fetch(`http://localhost:5000/api/comments/${id}`),
-//           fetch(`http://localhost:5000/api/articles?limit=4`),
-//         ]);
-
-//         const articleData = await articleRes.json();
-//         const commentData = await commentRes.json();
-//         const allArticles = await allArticlesRes.json();
-
-//         setArticle(articleData);
-//         setComments(commentData);
-
-//         // exclure l’article actuel
-//         const filtered = allArticles.filter((a: any) => a._id !== id).slice(0, 3);
-//         setSimilarArticles(filtered);
-//       } catch (error) {
-//         console.error("Erreur de chargement :", error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchData();
-//   }, [id]);
-
-//   // ❤️ Like
-//   const handleLike = async () => {
-//     const res = await fetch(`http://localhost:5000/api/articles/${id}/like`, {
-//       method: "POST",
-//     });
-//     const data = await res.json();
-//     setArticle({ ...article, likes: data.likes });
-//     setLiked(!liked);
-//   };
-
-//   // 💬 Ajouter un commentaire (anonyme)
-//   const handleComment = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     if (!newComment.trim()) return;
-
-//     await fetch(`http://localhost:5000/api/comments/${id}`, {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({ author: "Anonyme", text: newComment }),
-//     });
-
-//     setNewComment("");
-//     const res = await fetch(`http://localhost:5000/api/comments/${id}`);
-//     const comData = await res.json();
-//     setComments(comData);
-//   };
-
-//   if (loading)
-//     return (
-//       <p className="text-center mt-10 text-gray-500 animate-pulse">
-//         Chargement de l’article...
-//       </p>
-//     );
-
-//   if (!article)
-//     return (
-//       <p className="text-center mt-10 text-gray-500">Article introuvable 😢</p>
-//     );
-
-//   return (
-//     <main className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md mt-6">
-//       {/* 🖼️ Image principale */}
-//       {article.image && (
-//         <img
-//           src={article.image}
-//           alt={article.title}
-//           className="w-full h-72 object-cover rounded-lg mb-6"
-//         />
-//       )}
-
-//       {/* 📰 Titre et date */}
-//       <h1 className="text-3xl font-bold mb-2 text-gray-900">{article.title}</h1>
-//       <p className="text-gray-500 mb-4 italic">{article.date}</p>
-
-//       {/* ✍️ Contenu avec overflow scroll (sans scrollbar visible) */}
-//       <div
-//         className="text-gray-800 mb-6 whitespace-pre-line leading-relaxed max-h-[400px] overflow-y-scroll scrollbar-hide"
-//         style={{
-//           scrollbarWidth: "none",
-//           msOverflowStyle: "none",
-//         }}
-//       >
-//         <style jsx>{`
-//           .scrollbar-hide::-webkit-scrollbar {
-//             display: none;
-//           }
-//         `}</style>
-//         {article.content}
-//       </div>
-
-//       {/* ❤️ Like */}
-//       <div className="flex items-center gap-3 mb-8">
-//         <button
-//           onClick={handleLike}
-//           className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
-//         >
-//           {liked ? <FaHeart /> : <FaRegHeart />} J’aime
-//         </button>
-//         <span className="text-lg font-semibold text-gray-700">
-//           {article.likes || 0} like{article.likes > 1 ? "s" : ""}
-//         </span>
-//       </div>
-
-//       {/* 💬 Commentaires */}
-//       <section>
-//         <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-gray-800">
-//           <FaRegCommentDots /> Commentaires
-//         </h2>
-
-//         {/* 📝 Formulaire */}
-//         <form onSubmit={handleComment} className="mb-6 flex flex-col gap-3">
-//           <textarea
-//             placeholder="Écrire un commentaire..."
-//             value={newComment}
-//             onChange={(e) => setNewComment(e.target.value)}
-//             rows={3}
-//             className="border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-//           />
-//           <button
-//             type="submit"
-//             className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition font-semibold"
-//           >
-//             Publier 💬
-//           </button>
-//         </form>
-
-//         {/* Liste des commentaires */}
-//         <div className="space-y-4">
-//           {comments.length > 0 ? (
-//             comments.map((cmt) => (
-//               <div
-//                 key={cmt._id}
-//                 className="border border-gray-200 p-3 rounded-lg shadow-sm"
-//               >
-//                 <p className="flex items-center gap-2 font-semibold text-gray-800">
-//                   <FaUserCircle className="text-gray-500" />
-//                   {cmt.author || "Anonyme"}
-//                 </p>
-//                 <p className="text-gray-700 mt-1">{cmt.text}</p>
-//                 <p className="text-sm text-gray-400 mt-1">
-//                   {new Date(cmt.date).toLocaleDateString()}
-//                 </p>
-//               </div>
-//             ))
-//           ) : (
-//             <p className="text-gray-500">Aucun commentaire pour le moment.</p>
-//           )}
-//         </div>
-//       </section>
-
-//       {/* 📰 Articles similaires */}
-//       {similarArticles.length > 0 && (
-//         <section className="mt-12">
-//           <h2 className="text-2xl font-semibold mb-6 text-gray-900 text-center">
-//             Articles Similaires 🔍
-//           </h2>
-//           <div className="grid md:grid-cols-3 gap-6">
-//             {similarArticles.map((art) => (
-//               <div
-//                 key={art._id}
-//                 className="bg-gray-50 rounded-xl shadow-sm hover:shadow-md transition p-4"
-//               >
-//                 {art.image && (
-//                   <img
-//                     src={art.image}
-//                     alt={art.title}
-//                     className="w-full h-40 object-cover rounded-lg mb-3"
-//                   />
-//                 )}
-//                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
-//                   {art.title}
-//                 </h3>
-//                 <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-//                   {art.description}
-//                 </p>
-//                 <Link
-//                   href={`/article/${art._id}`}
-//                   className="inline-block bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg text-sm transition"
-//                 >
-//                   Lire l’article →
-//                 </Link>
-//               </div>
-//             ))}
-//           </div>
-//         </section>
-//       )}
-//     </main>
-//   );
-// }
-
