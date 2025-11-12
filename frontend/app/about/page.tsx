@@ -22,6 +22,7 @@ import {
   SiAdobephotoshop,
   SiAdobeillustrator,
 } from "react-icons/si";
+import Image from "next/image";
 
 
 export default function AboutPage() {
@@ -101,27 +102,28 @@ export default function AboutPage() {
           {[
             {
               icon: <FaGraduationCap className="text-blue-500 text-xl" />,
-              year: "2021",
+              year: "2022",
               title: "Premiers pas en Communication Digitale",
-              text: "Découverte du marketing digital, du storytelling et des réseaux sociaux.",
+              text: "Découverte du marketing digital, des réseaux sociaux et du developpement web.",
             },
             {
               icon: <FaLaptopCode className="text-blue-500 text-xl" />,
-              year: "2022",
+              year: "2023",
               title: "Formation en Développement Web",
               text: "Apprentissage de HTML, CSS, JavaScript, React et Next.js pour créer mes propres projets.",
             },
-            {
-              icon: <FaRocket className="text-blue-500 text-xl" />,
-              year: "2023",
-              title: "Lancement de mon Blog",
-              text: "Création de ce blog pour partager mes connaissances et inspirer d'autres passionnés du digital.",
-            },
+            
             {
               icon: <FaHandshake className="text-blue-500 text-xl" />,
               year: "2024",
               title: "Projets Collaboratifs",
               text: "Participation à des projets combinant communication et web, pour allier stratégie et technique.",
+            },
+            {
+              icon: <FaRocket className="text-blue-500 text-xl" />,
+              year: "2025",
+              title: "Lancement de mon Blog",
+              text: "Création de ce blog pour partager mes connaissances et inspirer d'autres passionnés du digital.",
             },
           ].map((step, index) => (
             <motion.div
@@ -321,12 +323,12 @@ export default function AboutPage() {
             color: "hover:text-blue-500 hover:shadow-blue-300",
           },
           {
-            href: "#",
+            href: "https://www.linkedin.com/in/fatou-gueye-239381377/",
             icon: <FaLinkedin />,
             color: "hover:text-blue-700 hover:shadow-blue-400",
           },
           {
-            href: "#",
+            href: "https://www.instagram.com/fg800_2220/",
             icon: <FaInstagram />,
             color: "hover:text-pink-600 hover:shadow-pink-300",
           },
