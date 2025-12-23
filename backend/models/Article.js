@@ -4,7 +4,9 @@ const articleSchema = new mongoose.Schema({
   title: { type: String, required: true },
   date: { type: String, required: true },
   description: { type: String },
-  image: { type: String },
+  image: { type: String,
+           default: "",
+   },
   content: { type: String },
   likes: { type: Number, default: 0 },
 });

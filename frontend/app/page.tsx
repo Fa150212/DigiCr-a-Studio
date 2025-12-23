@@ -48,13 +48,16 @@ export default function HomePage() {
                 key={article._id}
                 className="bg-white rounded-xl shadow-md hover:shadow-lg transition p-4 flex flex-col justify-between"
               >
-                {article.image && (
-                  <img
-                    src={article.image}
-                    alt={article.title}
-                    className="w-full h-48 object-cover rounded-lg mb-4"
-                  />
-                )}
+              
+                <img
+                  src={article.image || "/no-image.jpg"}
+                  alt={article.title}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/no-image.jpg";
+                  }}
+                  className="w-full h-48 object-cover rounded-lg mb-4"
+                />
+
 
                 <div>
                   <h2 className="text-xl font-semibold mb-2 text-gray-800">

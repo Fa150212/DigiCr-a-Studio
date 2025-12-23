@@ -1,25 +1,27 @@
-
 const express = require("express");
+const adminAuth = require("../middleware/adminAuth");
+
 const router = express.Router();
+
 const {
   getArticles,
+  getLastArticle,
   getArticleById,
   createArticle,
   likeArticle,
-  getLastArticle,
 } = require("../controllers/articleController");
 
-// 🔹 Récupérer le dernier article
+// 🔹 Dernier article
 router.get("/last", getLastArticle);
 
-// 🔹 Récupérer les articles (avec pagination)
+// 🔹 Tous les articles (pagination)
 router.get("/", getArticles);
 
-// 🔹 Récupérer un article par ID
+// 🔹 Article par ID
 router.get("/:id", getArticleById);
 
-// 🔹 Créer un nouvel article
-router.post("/", createArticle);
+// 🔹 Créer un article
+router.post("/", adminAuth, createArticle);
 
 // 🔹 Incrémenter les likes
 router.post("/:id/like", likeArticle);

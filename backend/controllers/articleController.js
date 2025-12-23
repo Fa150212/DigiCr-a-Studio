@@ -1,12 +1,10 @@
-// controllers/articleController.js
 const Article = require("../models/Article");
 
-// ✅ GET — Tous les articles avec pagination
-
+// ✅ GET articles (pagination)
 const getArticles = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 3; // 👈 affiche 3 articles par page
+    const limit = parseInt(req.query.limit) || 3;
     const skip = (page - 1) * limit;
 
     const total = await Article.countDocuments();
@@ -15,49 +13,67 @@ const getArticles = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    res.status(200).json({
+    res.json({
       articles,
-      total,
-      currentPage: page,
       totalPages: Math.ceil(total / limit),
     });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erreur lors du chargement des articles", error });
+  } catch (err) {
+    res.status(500).json({ message: "Erreur chargement articles" });
   }
 };
 
+// ✅ GET dernier article
+const getLastArticle = async (req, res) => {
+  try {
+    const article = await Article.findOne().sort({ date: -1 });
+    if (!article) {
+      return res.status(404).json({ message: "Aucun article trouvé" });
+    }
+    res.json(article);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur récupération dernier article" });
+  }
+};
 
-// ✅ GET — Article par ID
+// ✅ GET article par ID
 const getArticleById = async (req, res) => {
   try {
     const article = await Article.findById(req.params.id);
-    if (!article) return res.status(404).json({ message: "Article non trouvé" });
+    if (!article) {
+      return res.status(404).json({ message: "Article non trouvé" });
+    }
     res.json(article);
-  } catch (error) {
-    res.status(500).json({ message: "Erreur lors de la récupération de l'article", error });
+  } catch (err) {
+    res.status(500).json({ message: "Erreur récupération article" });
   }
 };
 
-// ✅ POST — Créer un article
+// ✅ POST créer article
 const createArticle = async (req, res) => {
   try {
     const { title, date, description, image, content } = req.body;
 
     if (!title || !content) {
-      return res.status(400).json({ message: "Le titre et le contenu sont obligatoires." });
+      return res.status(400).json({ message: "Titre et contenu obligatoires" });
     }
 
-    const newArticle = new Article({ title, date, description, image, content, likes: 0 });
-    await newArticle.save();
+    const article = new Article({
+      title,
+      date,
+      description,
+      image,
+      content,
+    });
 
-    res.status(201).json({ message: "Article créé avec succès ✅", article: newArticle });
-  } catch (error) {
-    res.status(500).json({ message: "Erreur lors de la création de l'article", error });
+    await article.save();
+    res.status(201).json(article);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur création article" });
   }
 };
 
 // ✅ POST — Incrémenter les likes
+
 const likeArticle = async (req, res) => {
   try {
     const article = await Article.findById(req.params.id);
@@ -72,15 +88,13 @@ const likeArticle = async (req, res) => {
   }
 };
 
-// ✅ GET — Dernier article publié
-const getLastArticle = async (req, res) => {
-  try {
-    const lastArticle = await Article.findOne().sort({ date: -1 }); // tri décroissant
-    if (!lastArticle) return res.status(404).json({ message: "Aucun article trouvé" });
-    res.json(lastArticle);
-  } catch (error) {
-    res.status(500).json({ message: "Erreur lors de la récupération du dernier article", error });
-  }
-};
 
-module.exports = { getArticles, getArticleById, createArticle, likeArticle, getLastArticle  };
+
+module.exports = {
+  getArticles,
+  getLastArticle,
+  getArticleById,
+  createArticle,
+  likeArticle,
+
+};
