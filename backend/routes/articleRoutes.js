@@ -1,6 +1,4 @@
 const express = require("express");
-const adminAuth = require("../middleware/adminAuth");
-
 const router = express.Router();
 
 const {
@@ -9,8 +7,14 @@ const {
   getArticleById,
   createArticle,
   likeArticle,
+  deleteArticle,
+  updateArticle,
 } = require("../controllers/articleController");
 
+const protect = require("../middleware/protect");
+const requireAdmin = require("../middleware/requireAdmin");
+
+// 🔹 Public
 // 🔹 Dernier article
 router.get("/last", getLastArticle);
 
@@ -21,9 +25,13 @@ router.get("/", getArticles);
 router.get("/:id", getArticleById);
 
 // 🔹 Créer un article
-router.post("/", adminAuth, createArticle);
-
 // 🔹 Incrémenter les likes
 router.post("/:id/like", likeArticle);
 
+// 🔒 Admin uniquement
+router.post("/", protect, requireAdmin, createArticle);
+router.delete("/:id", protect, requireAdmin, deleteArticle);
+router.put("/:id", protect, requireAdmin, updateArticle);
+
 module.exports = router;
+

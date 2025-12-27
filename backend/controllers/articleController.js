@@ -1,6 +1,6 @@
 const Article = require("../models/Article");
 
-// ✅ GET articles (pagination)
+// ✅ GET articles (pagination + total)
 const getArticles = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -8,6 +8,7 @@ const getArticles = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const total = await Article.countDocuments();
+
     const articles = await Article.find()
       .sort({ date: -1 })
       .skip(skip)
@@ -15,12 +16,14 @@ const getArticles = async (req, res) => {
 
     res.json({
       articles,
+      total, // ✅ AJOUT IMPORTANT
       totalPages: Math.ceil(total / limit),
     });
   } catch (err) {
     res.status(500).json({ message: "Erreur chargement articles" });
   }
 };
+
 
 // ✅ GET dernier article
 const getLastArticle = async (req, res) => {
@@ -39,14 +42,19 @@ const getLastArticle = async (req, res) => {
 const getArticleById = async (req, res) => {
   try {
     const article = await Article.findById(req.params.id);
-    if (!article) {
+    if (!article)
       return res.status(404).json({ message: "Article non trouvé" });
-    }
+
+    // 👀 +1 vue
+    article.views += 1;
+    await article.save();
+
     res.json(article);
   } catch (err) {
     res.status(500).json({ message: "Erreur récupération article" });
   }
 };
+
 
 // ✅ POST créer article
 const createArticle = async (req, res) => {
@@ -88,6 +96,33 @@ const likeArticle = async (req, res) => {
   }
 };
 
+// 🔹 DELETE article (admin)
+const deleteArticle = async (req, res) => {
+  const article = await Article.findById(req.params.id);
+  if (!article) return res.status(404).json({ message: "Article introuvable" });
+
+  await article.deleteOne();
+  res.json({ success: true });
+};
+
+const updateArticle = async (req, res) => {
+  try {
+    const article = await Article.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    if (!article) {
+      return res.status(404).json({ message: "Article non trouvé" });
+    }
+
+    res.json(article);
+  } catch (err) {
+    res.status(500).json({ message: "Erreur mise à jour" });
+  }
+};
+
 
 
 module.exports = {
@@ -96,5 +131,7 @@ module.exports = {
   getArticleById,
   createArticle,
   likeArticle,
+  deleteArticle,
+  updateArticle,
 
 };

@@ -6,7 +6,9 @@ import Header from "./components/Header"; // ✅ Import du Header client
 
 export const metadata = {
   title: "DigiCréa-Studio",
-  description: "Astuces et stratégies en communication digitale",
+  description: "Blog de communication digitale, marketing et stratégie web",
+  keywords: ["blog", "marketing", "digital", "seo", "communication"],
+  authors: [{ name: "Ton Nom" }],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
