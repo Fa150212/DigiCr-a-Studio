@@ -15,7 +15,7 @@ export default function HomePage() {
     const fetchArticles = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:5000/api/articles?page=${page}&limit=3`);
+        const res = await fetch(`https://digicr-backend.onrender.com/api/articles?page=${page}&limit=3`);
         const data = await res.json();
         setArticles(data.articles);
         setTotalPages(data.totalPages);

@@ -14,7 +14,7 @@ const handler = NextAuth({
     // ✅ Quand l'utilisateur se connecte, on enregistre ou met à jour le profil dans MongoDB
     async signIn({ user }) {
       try {
-        await fetch("http://localhost:5000/api/users/google-login", {
+        await fetch("https://digicr-backend.onrender.com/api/users/google-login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -33,7 +33,7 @@ const handler = NextAuth({
     // ✅ Ajout des infos utilisateur à la session
     async session({ session }) {
       try {
-        const res = await fetch(`http://localhost:5000/api/users/by-email/${session.user?.email}`);
+        const res = await fetch(`https://digicr-backend.onrender.com/api/users/by-email/${session.user?.email}`);
         const data = await res.json();
         session.user._id = data._id; // on stocke l'id Mongo
         session.user.isPremium = data.isPremium;

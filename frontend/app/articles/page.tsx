@@ -19,7 +19,7 @@ export default function LastArticlePage() {
   useEffect(() => {
     const fetchLastArticle = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/articles/last");
+        const res = await fetch("https://digicr-backend.onrender.com/api/articles/last");
         const data = await res.json();
         setArticle(data);
       } catch (error) {

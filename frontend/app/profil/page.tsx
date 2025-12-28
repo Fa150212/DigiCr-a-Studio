@@ -22,7 +22,7 @@ export default function ProfilPage() {
   // 🔹 Charger les infos utilisateur
   useEffect(() => {
     if (user?.email) {
-      fetch(`http://localhost:5000/api/users/by-email/${user.email}`)
+      fetch(`https://digicr-backend.onrender.com/api/users/by-email/${user.email}`)
         .then((res) => res.json())
         .then((data) =>
           setForm({
@@ -43,7 +43,7 @@ export default function ProfilPage() {
     if (!user?._id) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/users/${user._id}`, {
+      const res = await fetch(`https://digicr-backend.onrender.com/api/users/${user._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

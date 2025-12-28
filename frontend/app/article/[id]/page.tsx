@@ -18,11 +18,11 @@ export default function ArticlePage() {
   // 🧩 Charger article et commentaires
   useEffect(() => {
     const fetchData = async () => {
-      const articleRes = await fetch(`http://localhost:5000/api/articles/${id}`);
+      const articleRes = await fetch(`https://digicr-backend.onrender.com/api/articles/${id}`);
       const articleData = await articleRes.json();
       setArticle(articleData);
 
-      const commentRes = await fetch(`http://localhost:5000/api/comments/${id}`);
+      const commentRes = await fetch(`https://digicr-backend.onrender.com/api/comments/${id}`);
       const commentData = await commentRes.json();
       setComments(commentData);
 
@@ -33,7 +33,7 @@ export default function ArticlePage() {
 
   // ❤️ Like article
   const handleLike = async () => {
-    const res = await fetch(`http://localhost:5000/api/articles/${id}/like`, { method: "POST" });
+    const res = await fetch(`https://digicr-backend.onrender.com/api/articles/${id}/like`, { method: "POST" });
     const data = await res.json();
     setArticle({ ...article, likes: data.likes });
   };
@@ -44,7 +44,7 @@ export default function ArticlePage() {
     if (!session) return alert("Connecte-toi pour commenter !");
     if (!newComment.trim()) return;
 
-    await fetch(`http://localhost:5000/api/comments/${id}`, {
+    await fetch(`https://digicr-backend.onrender.com/api/comments/${id}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ author: session.user.name, text: newComment }),
@@ -59,7 +59,7 @@ export default function ArticlePage() {
     if (!session) return alert("Connecte-toi pour répondre !");
     if (!replyText.trim()) return;
 
-    await fetch(`http://localhost:5000/api/comments/${commentId}/reply`, {
+    await fetch(`https://digicr-backend.onrender.com/api/comments/${commentId}/reply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ author: session.user.name, text: replyText }),
@@ -72,7 +72,7 @@ export default function ArticlePage() {
 
   // 😍 Réagir avec un émoji
   const handleReact = async (commentId: string, emoji: string) => {
-    await fetch(`http://localhost:5000/api/comments/${commentId}/react`, {
+    await fetch(`https://digicr-backend.onrender.com/api/comments/${commentId}/react`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ emoji }),
@@ -83,7 +83,7 @@ export default function ArticlePage() {
 
   // 🔁 Recharger les commentaires
   const refreshComments = async () => {
-    const res = await fetch(`http://localhost:5000/api/comments/${id}`);
+    const res = await fetch(`https://digicr-backend.onrender.com/api/comments/${id}`);
     const data = await res.json();
     setComments(data);
   };
