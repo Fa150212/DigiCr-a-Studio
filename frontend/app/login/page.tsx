@@ -11,7 +11,7 @@ export default function Login() {
   const submit = async (e: any) => {
     e.preventDefault();
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API}/api/login`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API}/api/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
