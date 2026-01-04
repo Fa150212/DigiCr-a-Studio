@@ -23,7 +23,7 @@ const app = express();
 ================================= */
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://digi-cr-a-studio-git-main-fatou-gueyes-projects.vercel.app"
+  "https://digi-cr-a-studio-l1xs.vercel.app"
 ];
 
 app.use(
